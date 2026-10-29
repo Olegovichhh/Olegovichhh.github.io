@@ -997,6 +997,8 @@ class LevelSpec {
   goalDone(b) { return b.crystalsCollected >= this.crystalGoal && this.secondaryDone(b); }
   par3() { return Math.floor(this.par * 1.15) + 2; }
   par2() { return Math.floor(this.par * 1.7) + 4; }
+  /** Move budget of a campaign level: counts down to 0, then the level is lost. */
+  moveLimit() { return Math.floor(this.par * 2.1) + 6; }
   encodeTune() { return String(this.par); }
   decodeTune(s) { const v = parseInt(String(s).trim(), 10); if (isNaN(v)) return false; this.par = v; this.tuned = true; return true; }
 }
@@ -1267,7 +1269,7 @@ const Meta = {
   bonuses: [
     { kind: BN_TNT, name: 'Динамит', unlock: 3, values: [3, 3, 5, 5], unit: '×', about: 'Взрывает камни вокруг' },
     { kind: BN_TIME, name: 'Нотная колба', unlock: 4, values: [20, 30, 40, 50], unit: '%', about: 'Наполняет колбу «Крещендо»' },
-    { kind: BN_STAR, name: 'Звезда', unlock: 6, values: [1, 1, 2, 3], unit: '★', about: 'Звёзды в копилку' },
+    { kind: BN_STAR, name: 'Звезда', unlock: 6, values: [1, 1, 2, 3], unit: '★', about: 'Даёт 1000 очков за каждую звезду' },
     { kind: BN_LIGHT, name: 'Молния', unlock: 9, values: [4, 6, 8, 10], unit: 'ударов', about: 'Бьёт по важным клеткам' },
     { kind: BN_MULT, name: 'Множитель', unlock: 12, values: [2, 3, 4, 5], unit: 'ход.', about: 'Очки ×2' },
     { kind: BN_CRYST, name: 'Россыпь', unlock: 15, values: [2, 3, 4, 5], unit: 'крист.', about: 'Сразу даёт кристаллы' },
@@ -1290,9 +1292,9 @@ const Meta = {
   },
   bonusLevelNames: ['Звездопад', 'Хрустальный дождь', 'Фейерверк'],
   bonusLevelAbout: [
-    '15 ходов. На камнях много звёзд — собирайте их в копилку!',
-    '15 ходов. Кристаллы сыплются дождём, каждые 4 кристалла — звезда.',
-    '15 ходов. Бонусы повсюду, колба наполняется втрое быстрее. Очки превращаются в звёзды.',
+    '15 ходов. На камнях много звёзд — каждая даёт очки. Награда — 1 звезда.',
+    '15 ходов. Кристаллы сыплются дождём — соберите как можно больше. Награда — 1 звезда.',
+    '15 ходов. Бонусы повсюду, колба наполняется втрое быстрее. Награда — 1 звезда.',
   ],
   unlocksAt(level) {
     const out = [];
@@ -3003,13 +3005,13 @@ class IntroPopup extends Popup {
     } else {
       this.drawGoal(c, cx, y);
       y += 95 * g.dp;
-      Ui.txt(c, 'Без ограничений · ★★★ за ' + spec.par3() + ' ход.', cx, y, 17 * g.dp, 0xFFFFE9C0);
+      Ui.txt(c, 'Ходов: ' + spec.moveLimit() + ' · ★★★ за ' + spec.par3() + ' ход.', cx, y, 17 * g.dp, 0xFFFFE9C0);
       y += 22 * g.dp;
     }
     const notes = [];
     if (spec.intro >= 0) notes.push(['Новое: ' + featureName(spec.intro), featureText(spec.intro)]);
     for (const u of this.unlocks) notes.push(['Открыто: ' + u[0], u[1]]);
-    if (n === 1) notes.push(['Как в «Монтесуме»', 'Собирайте кристаллы на камнях. Ходы не ограничены — чем меньше ходов, тем больше звёзд. Сильные ходы подряд наполняют колбу «Крещендо».']);
+    if (n === 1) notes.push(['Как в «Монтесуме»', 'Собирайте кристаллы на камнях, пока не кончились ходы. Чем меньше ходов потратите, тем больше звёзд. За каждую победу — звезда для Мастерской.']);
     if (notes.length && this.ready) {
       const maxB = this.notesBottom - (prog.streakOpen ? 22 * g.dp : 0);
       const fs = notes.length > 1 ? 13 * g.dp : 15 * g.dp, bw = rect.w - 44 * g.dp;
@@ -3149,8 +3151,8 @@ class ModesPopup extends Popup {
     if (!prog.modesOpen) Ui.txtM(c, 'Откроются после этапа 1', cx, rect.t + 78 * g.dp, 16 * g.dp, 0xFFFFE9C0);
     else Ui.txtM(c, 'Тотемы и бонусы работают везде', cx, rect.t + 78 * g.dp, 14 * g.dp, 0xCCFFFFFF);
     const e = this.btns.list[0].r, a = this.btns.list[1].r;
-    Ui.txtM(c, 'Играйте сколько хотите, кристаллы → звёзды · рекорд ' + prog.modeBest('endless'), cx, e.b + 14 * g.dp, 12 * g.dp, 0xDDFFFFFF);
-    Ui.txtM(c, '25 ходов на рекорд очков · рекорд ' + prog.modeBest('arcade'), cx, a.b + 14 * g.dp, 12 * g.dp, 0xDDFFFFFF);
+    Ui.txtM(c, 'Играйте сколько хотите, 1★ за забег · рекорд ' + prog.modeBest('endless'), cx, e.b + 14 * g.dp, 12 * g.dp, 0xDDFFFFFF);
+    Ui.txtM(c, '25 ходов на рекорд очков, 1★ · рекорд ' + prog.modeBest('arcade'), cx, a.b + 14 * g.dp, 12 * g.dp, 0xDDFFFFFF);
     this.btns.draw(c);
     c.restore();
   }
@@ -3280,7 +3282,7 @@ class ShopScene {
     }
   }
   fmt(v, unit) { return v >= 99 ? 'все' : v + ' ' + unit; }
-  bfmt(kind, v, unit) { return kind === BN_TNT ? (v >= 5 ? '5×5' : '3×3') : kind === BN_TUNE ? v + '%' : kind === BN_STAR ? '★' + v : v + ' ' + unit; }
+  bfmt(kind, v, unit) { return kind === BN_TNT ? (v >= 5 ? '5×5' : '3×3') : kind === BN_TUNE ? v + '%' : kind === BN_STAR ? v * 1000 + ' оч.' : v + ' ' + unit; }
   touch(action, x, y) {
     const g = this.g;
     if (action === T_DOWN) {
@@ -3348,7 +3350,7 @@ class LevelScene {
       p.kind = (kind === STRIPE_H && rng.nextBoolean()) ? STRIPE_V : kind;
       this.startSpecials.push(cells[k]);
     });
-    this.moveBudget = mode === MODE_BONUS ? 15 : mode === MODE_ARCADE ? 25 : 0;
+    this.moveBudget = mode === MODE_BONUS ? 15 : mode === MODE_ARCADE ? 25 : mode === MODE_CAMPAIGN ? spec.moveLimit() : 0;
     this.movesUsed = 0; this.movesAtGoal = 0; this.multMoves = 0; this.frenzyMoves = 0;
     this.flask = 0; this.combo = 0; this.starsEarned = 0;
     this.totemLvl = [0, 1, 2, 3, 4, 5].map(c => prog.totemLevel(c));
@@ -3453,7 +3455,7 @@ class LevelScene {
     this.resolveTotems();
   }
   skipFinale() {
-    const left = Math.max(0, Math.min(15, this.par2 - this.movesAtGoal) - this.finaleNote);
+    const left = Math.max(0, Math.min(15, this.moveBudget - this.movesAtGoal) - this.finaleNote);
     this.board.score += left * 450 + this.board.specialCount() * 500;
     this.finaleNote = 15;
     this.g.audio.play('star', 0.6);
@@ -3475,7 +3477,6 @@ class LevelScene {
     this.combo = this.lastTurnCleared >= 5 ? this.combo + 1 : 1;
     this.lastTurnCleared = 0;
     if (this.combo >= 2) g.fx.text('Комбо ×' + this.combo, this.flaskRect.l + 60 * g.dp, this.flaskRect.t - 16 * g.dp, (15 + Math.min(this.combo, 8)) * g.dp, Pal.GOLD, 0.9);
-    if (this.combo > 0 && this.combo % 5 === 0) this.earnStar(1, this.flaskRect.cx, this.flaskRect.t);
   }
   earnStar(k, x, y) {
     this.starsEarned += k;
@@ -3602,7 +3603,7 @@ class LevelScene {
     switch (bf.kind) {
       case BN_TIME: this.addFlask(v / 100); g.fx.text('Крещендо +' + v + '%', x, y, 20 * g.dp, 0xFF3A72C0, 1.1); g.audio.play('star', 0.6, 0.8); break;
       case BN_MULT: this.multMoves += v; g.fx.text('Очки ×2!', x, y, 24 * g.dp, Pal.GOLD, 1.1); g.audio.play('create', 0.6); break;
-      case BN_STAR: this.earnStar(v, x, y); break;
+      case BN_STAR: this.board.score += v * 1000; g.fx.text('★ +' + v * 1000, x, y, 22 * g.dp, Pal.GOLD, 1.0); g.audio.play('star', 0.5, 1.3); break;
       case BN_CRYST: {
         const s2 = g.sprites; if (!s2) return;
         for (let k = 0; k < v; k++) this.flyers.push({ bm: s2.crystalBig, x0: x + (k - v / 2) * this.cell * 0.3, y0: y, x1: this.crystalIcon[0], y1: this.crystalIcon[1], t: -k * 0.06, dur: 0.6 });
@@ -3618,7 +3619,7 @@ class LevelScene {
     const g = this.g;
     this.flask = 1; this.frenzyMoves = 5;
     g.fx.text('ФОРТИССИМО!', g.W / 2, this.oy + this.cell * this.board.h * 0.4, 46 * g.dp, Pal.GOLD, 1.6, true);
-    g.fx.text('5 ходов: очки ×2 и звёзды', g.W / 2, this.oy + this.cell * this.board.h * 0.4 + 40 * g.dp, 17 * g.dp, 0xFFFFFFFF, 1.6);
+    g.fx.text('5 ходов: очки ×2', g.W / 2, this.oy + this.cell * this.board.h * 0.4 + 40 * g.dp, 17 * g.dp, 0xFFFFFFFF, 1.6);
     g.audio.play('win', 0.6); g.vibe(40);
   }
   addFlask(f) { if (this.frenzyMoves > 0) return; this.flask += f; if (this.flask >= 1) this.startFrenzy(); }
@@ -3628,7 +3629,6 @@ class LevelScene {
     for (const c of this.curColors) if (this.prevColors.has(c) && this.totemReady(c)) { fire = c; break; }
     this.prevColors = new Set(this.curColors);
     if (fire >= 0) { this.pendingTotem = fire; this.prevColors.delete(fire); }
-    if (this.frenzyMoves > 0) this.earnStar(1, this.flaskRect.cx, this.flaskRect.t);
   }
   runTotem(c) {
     const g = this.g, board = this.board;
@@ -3666,8 +3666,8 @@ class LevelScene {
       const r = this.runTotem(c);
       if (r && (r.clears.length || r.blocks.length || r.crystals.length || r.gifts.length)) { this.play(r); return; }
     }
-    if (this.mode === MODE_CAMPAIGN && this.spec.goalDone(board)) { this.movesAtGoal = this.movesUsed; if (this.par2 - this.movesUsed > 0) this.startFinale(); else this.win(); return; }
-    if (this.moveBudget > 0 && this.movesUsed >= this.moveBudget) { this.finishMode(); return; }
+    if (this.mode === MODE_CAMPAIGN && this.spec.goalDone(board)) { this.movesAtGoal = this.movesUsed; if (this.moveBudget - this.movesUsed > 0) this.startFinale(); else this.win(); return; }
+    if (this.moveBudget > 0 && this.movesUsed >= this.moveBudget) { if (this.mode === MODE_CAMPAIGN) this.lose(); else this.finishMode(); return; }
     if (board.findMoves().length === 0) { this.doShuffle(); return; }
     this.ph = PH_IDLE; this.idleT = 0;
   }
@@ -3692,7 +3692,7 @@ class LevelScene {
     this.ph = PH_END;
     const stars = this.computeStars(), before = prog.stars(spec.num);
     prog.recordWin(spec.num, stars, this.board.score);
-    const gain = this.starsEarned + Math.max(0, stars - before);
+    const gain = 1; // one star for the workshop per won level
     prog.addStars(gain);
     if (prog.streakOpen) prog.streak = prog.streak + 1;
     g.fx.at(0.5, () => { this.overlay = new WinOverlay(this, stars, gain); g.audio.play('win', 0.8); });
@@ -3701,18 +3701,22 @@ class LevelScene {
   finishMode() {
     const g = this.g, prog = this.prog, board = this.board;
     this.ph = PH_END;
-    let gain;
-    if (this.mode === MODE_BONUS) {
-      gain = this.spec.bonusLevel === 0 ? this.starsEarned + 2 : this.spec.bonusLevel === 1 ? this.starsEarned + ((board.crystalsCollected / 4) | 0) : this.starsEarned + ((board.score / 2500) | 0);
-      if (prog.bonusPlayed(this.stage)) gain = Math.max(1, (gain / 3) | 0);
-    } else if (this.mode === MODE_ENDLESS) gain = this.starsEarned + ((board.crystalsCollected / 10) | 0);
-    else gain = this.starsEarned + ((board.crystalsCollected / 6) | 0);
+    // one star per finished run; an endless run counts once at least 10 moves were made
+    const gain = (this.mode === MODE_ENDLESS && this.movesUsed < 10) ? 0 : 1;
     prog.addStars(gain);
     if (this.mode === MODE_BONUS) prog.setBonusPlayed(this.stage);
     if (this.mode === MODE_ENDLESS) prog.setModeBest('endless', board.score);
     if (this.mode === MODE_ARCADE) prog.setModeBest('arcade', board.score);
     g.audio.play('win', 0.7);
     this.overlay = new ResultOverlay(this, gain);
+  }
+  lose() {
+    const g = this.g;
+    this.ph = PH_END;
+    if (this.prog.streakOpen) this.prog.streak = 0;
+    g.audio.play('lose', 0.7);
+    g.fx.text('Ходы закончились', g.W / 2, this.oy + this.cell * this.board.h * 0.45, 34 * g.dp, 0xFFFFFFFF, 1.2, true);
+    g.fx.at(0.9, () => { this.overlay = new LoseOverlay(this); });
   }
   openPause() { if (!this.overlay && this.ph !== PH_END) this.overlay = new PauseOverlay(this); }
 
@@ -3814,7 +3818,7 @@ class LevelScene {
       case PH_FINALE:
         this.finaleT -= dt;
         if (this.finaleT <= 0) {
-          if (this.finaleNote < Math.min(15, this.par2 - this.movesAtGoal)) {
+          if (this.finaleNote < Math.min(15, this.moveBudget - this.movesAtGoal)) {
             board.score += 150;
             const i = board.randomNormalCell();
             if (i >= 0) {
@@ -4175,20 +4179,24 @@ class LevelScene {
     if (!sp) return;
     const mr = new R(8 * dp, hudTop, g.W * 0.29, hudTop + hudH);
     Ui.panel(c, mr, 20 * dp, 235);
-    if (this.moveBudget > 0) {
+    if (this.mode === MODE_CAMPAIGN) {
+      // countdown: moves left until 0; the star row shows how many of them still keep the current rating
+      const used = (this.finale || this.ph === PH_END) && this.movesAtGoal > 0 ? this.movesAtGoal : this.movesUsed;
+      const left = Math.max(0, this.moveBudget - used);
+      const lfs = Math.min(hudH * 0.14, hudH * 0.14 * (mr.w - 22 * dp) / Math.max(1, Ui.measure(c, 'Осталось ходов', hudH * 0.14)));
+      Ui.txtM(c, 'Осталось ходов', mr.cx, mr.t + hudH * 0.18, lfs, 0xFFFFE9C0, 0);
+      Ui.txt(c, '' + left, mr.cx, mr.t + hudH * 0.5, hudH * 0.38, left <= 5 ? 0xFFFF8A80 : 0xFFFFFFFF);
+      const [stars, keep] = used <= this.par3 ? [3, this.par3 - used] : used <= this.par2 ? [2, this.par2 - used] : [1, -1];
+      const y = mr.t + hudH * 0.82;
+      for (let k = 0; k < 3; k++) Ui.star(c, mr.cx - hudH * 0.36 + k * hudH * 0.13, y, hudH * 0.06, k < stars);
+      Ui.txtM(c, keep >= 0 ? 'ещё ' + keep : '', mr.cx + hudH * 0.06, y, hudH * 0.13, 0xFFFFE9C0, 0, 'left');
+    } else if (this.moveBudget > 0) {
       const left = Math.max(0, this.moveBudget - this.movesUsed);
       Ui.txtM(c, 'Осталось ходов', mr.cx, mr.t + hudH * 0.18, hudH * 0.14, 0xFFFFE9C0, 0);
       Ui.txt(c, '' + left, mr.cx, mr.t + hudH * 0.55, hudH * 0.42, left <= 3 ? 0xFFFF8A80 : 0xFFFFFFFF);
     } else {
       Ui.txtM(c, 'Ходы', mr.cx, mr.t + hudH * 0.18, hudH * 0.16, 0xFFFFE9C0, 0);
       Ui.txt(c, '' + this.movesUsed, mr.cx, mr.t + hudH * 0.5, hudH * 0.38);
-      if (this.mode === MODE_CAMPAIGN) {
-        const used = (this.finale || this.ph === PH_END) ? this.movesAtGoal : this.movesUsed;
-        const [stars, lim] = used <= this.par3 ? [3, this.par3] : used <= this.par2 ? [2, this.par2] : [1, 0];
-        const y = mr.t + hudH * 0.82;
-        for (let k = 0; k < 3; k++) Ui.star(c, mr.cx - hudH * 0.36 + k * hudH * 0.13, y, hudH * 0.06, k < stars);
-        Ui.txtM(c, lim > 0 ? 'до ' + lim : '', mr.cx + hudH * 0.06, y, hudH * 0.13, 0xFFFFE9C0, 0, 'left');
-      }
     }
     const gr = new R(g.W * 0.31, hudTop, g.W - 8 * dp, hudTop + hudH);
     Ui.panel(c, gr, 20 * dp, 235);
@@ -4219,10 +4227,7 @@ class LevelScene {
     });
     const y2 = gr.t + hudH * 0.76;
     Ui.txt(c, '' + Math.floor(this.shownScore), gr.l + 14 * dp, y2, hudH * 0.19, 0xFFFFFFFF, 0xFF2B211C, 'left');
-    let bx = gr.r - 14 * dp;
-    const se = '★+' + this.starsEarned;
-    Ui.txt(c, se, bx, y2, hudH * 0.18, Pal.GOLD, 0xFF2B211C, 'right');
-    bx -= Ui.measure(c, se, hudH * 0.18) + 10 * dp;
+    const bx = gr.r - 14 * dp;
     if (this.scoreMult > 1) Ui.txt(c, '×' + this.scoreMult, bx, y2, hudH * 0.2 * (1 + 0.08 * Math.sin(g.time * 9)), 0xFFFFD34A, 0xFF2B211C, 'right');
   }
   drawFlask(c) {
@@ -4364,14 +4369,14 @@ class PauseOverlay extends Overlay {
     super(L);
     const g = this.g, prog = g.prog;
     this.r = this.panelRect(0.82, 0.52);
-    const exitLabel = L.mode === MODE_ENDLESS ? 'Завершить и забрать звёзды' : L.mode === MODE_CAMPAIGN ? 'Выйти на карту' : 'Выйти';
+    const exitLabel = L.mode === MODE_ENDLESS ? 'Завершить и забрать звезду' : L.mode === MODE_CAMPAIGN ? 'Выйти на карту' : 'Выйти';
     this.stack(this.r, this.r.t + this.r.h * 0.22, [
       ['Продолжить', GREEN, () => { L.overlay = null; }],
       ['', GREY, () => { prog.sound = !prog.sound; }],
       ['', GREY, () => { prog.music = !prog.music; if (prog.music) g.audio.resumeMusic(); else g.audio.applyMusic(); }],
       [exitLabel, WOOD, () => {
         if (L.mode === MODE_ENDLESS) { L.overlay = null; L.finishMode(); }
-        else { prog.addStars(L.starsEarned); if (L.mode === MODE_CAMPAIGN && L.movesUsed > 0) prog.streak = 0; g.go(new MapScene(g, -1)); }
+        else { if (L.mode === MODE_CAMPAIGN && L.movesUsed > 0) prog.streak = 0; g.go(new MapScene(g, -1)); }
       }],
     ]);
   }
@@ -4420,7 +4425,7 @@ class WinOverlay extends Overlay {
     }
     Ui.txtM(c, 'Уровень ' + L.spec.num + ' пройден за ' + L.movesAtGoal + ' ход.', r.cx, r.t + 162 * g.dp, 15 * g.dp, 0xFFFFE9C0);
     Ui.txt(c, 'Очки: ' + L.board.score, r.cx, r.t + 192 * g.dp, 22 * g.dp);
-    Ui.txt(c, '★ +' + this.gain + ' в копилку (всего ' + prog.wallet + ')', r.cx, r.t + 222 * g.dp, 17 * g.dp, Pal.GOLD);
+    Ui.txt(c, '★ +' + this.gain + ' в Мастерскую (всего ' + prog.wallet + ')', r.cx, r.t + 222 * g.dp, 17 * g.dp, Pal.GOLD);
     if (prog.streakOpen) {
       const st = 'Серия побед: ' + prog.streak + ' · на старте следующего: +' + Math.min(prog.streak, 4) + ' спецфишк.';
       const fs = Math.min(13 * g.dp, 13 * g.dp * (r.w - 28 * g.dp) / Math.max(1, Ui.measure(c, st, 13 * g.dp)));
@@ -4453,7 +4458,40 @@ class ResultOverlay extends Overlay {
     this.title(c, r, name);
     Ui.txtM(c, 'Очки: ' + L.board.score + '   ·   кристаллы: ' + L.board.crystalsCollected, r.cx, r.t + 96 * g.dp, 16 * g.dp, 0xFFFFE9C0);
     if (L.mode !== MODE_BONUS) Ui.txt(c, 'Рекорд: ' + prog.modeBest(L.mode === MODE_ENDLESS ? 'endless' : 'arcade'), r.cx, r.t + 124 * g.dp, 16 * g.dp);
-    Ui.txt(c, '★ +' + this.gain + ' в копилку', r.cx, r.t + 156 * g.dp, 22 * g.dp, Pal.GOLD);
+    Ui.txt(c, this.gain > 0 ? '★ +' + this.gain + ' в Мастерскую' : 'Сделайте 10 ходов, чтобы получить звезду', r.cx, r.t + 156 * g.dp, this.gain > 0 ? 22 * g.dp : 15 * g.dp, Pal.GOLD);
+    this.btns.draw(c);
+    c.restore();
+  }
+}
+
+class LoseOverlay extends Overlay {
+  constructor(L) {
+    super(L);
+    const g = this.g;
+    this.r = this.panelRect(0.86, Math.max(0.48, 400 * g.dp / g.H));
+    this.stack(this.r, this.r.t + Math.max(this.r.h * 0.5, 200 * g.dp), [
+      ['Повторить', GREEN, () => { const s = LevelGen.generate(L.spec.num); s.par = L.spec.par; s.tuned = true; g.go(new LevelScene(g, s, MODE_CAMPAIGN)); }],
+      ['Мастерская', WOOD, () => g.go(new ShopScene(g, L.spec.num))],
+      ['На карту', GREY, () => g.go(new MapScene(g, -1))],
+    ]);
+  }
+  draw(c) {
+    const g = this.g, r = this.r, L = this.L, spec = L.spec, b = L.board;
+    c.save(); this.scaleIn(c, r);
+    Ui.panel(c, r, 26 * g.dp);
+    this.title(c, r, 'Ходы закончились');
+    const parts = [];
+    const cl = spec.crystalGoal - b.crystalsCollected;
+    if (cl > 0) parts.push('кристаллов: ' + cl);
+    if (spec.goal === G_JELLY && b.jellyLeft() > 0) parts.push('желе: ' + b.jellyLeft());
+    if (spec.goal === G_INGR && spec.ingrTotal - b.ingrCollected > 0) parts.push('колокольчиков: ' + (spec.ingrTotal - b.ingrCollected));
+    if (spec.goal === G_ORGAN && spec.organGoal - b.organNotes > 0) parts.push('нот шарманки: ' + (spec.organGoal - b.organNotes));
+    if (spec.goal === G_COLLECT && !spec.secondaryDone(b)) parts.push('заказ не собран');
+    const t1 = parts.length ? 'Осталось собрать: ' + parts.join(', ') : 'Цель почти выполнена!';
+    const fs = Math.min(16 * g.dp, 16 * g.dp * (r.w - 28 * g.dp) / Math.max(1, Ui.measure(c, t1, 16 * g.dp)));
+    Ui.txtM(c, t1, r.cx, r.t + 96 * g.dp, fs, 0xFFFFE9C0);
+    Ui.txtM(c, 'Инструменты и тотемы помогут пройти быстрее.', r.cx, r.t + 128 * g.dp, 14 * g.dp, 0xCCFFFFFF);
+    Ui.txtM(c, 'Улучшить их можно в Мастерской.', r.cx, r.t + 150 * g.dp, 14 * g.dp, 0xCCFFFFFF);
     this.btns.draw(c);
     c.restore();
   }
@@ -4496,7 +4534,9 @@ class Game {
     const cw = window.innerWidth, ch = window.innerHeight;
     this.canvas.width = Math.round(cw * dpr); this.canvas.height = Math.round(ch * dpr);
     this.canvas.style.width = cw + 'px'; this.canvas.style.height = ch + 'px';
-    this.W = this.canvas.width; this.H = this.canvas.height; this.dp = dpr;
+    this.W = this.canvas.width; this.H = this.canvas.height; this.dpr = dpr;
+    // UI unit: device density on phones, scaled up on tablets so panels and text keep phone proportions
+    this.dp = Math.max(dpr, Math.min(this.W / 400, this.H / 711));
     const [st, sb] = this.readSafeArea();
     this.safeTop = Math.max(st * dpr, 8 * dpr);
     this.safeBottom = Math.min(sb * dpr, this.H * 0.08);
@@ -4579,7 +4619,7 @@ class Game {
 
   bindInput() {
     const cv = this.canvas;
-    const pos = e => { const r = cv.getBoundingClientRect(); return [(e.clientX - r.left) * this.dp, (e.clientY - r.top) * this.dp]; };
+    const pos = e => { const r = cv.getBoundingClientRect(); return [(e.clientX - r.left) * this.dpr, (e.clientY - r.top) * this.dpr]; };
     const send = (a, e) => {
       if (this.fadeDir !== 0) return;
       const [x, y] = pos(e);
